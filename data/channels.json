@@ -10,6 +10,11 @@
             "has_text": false,
             "spam_match": 0.8,
             "allowed_links": []
+        },
+        "duplicate_options": {
+            "is_enabled": false,
+            "cache_amount": 10,
+            "cached_posts": []
         }
     }
 ]

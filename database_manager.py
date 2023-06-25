@@ -22,11 +22,22 @@ class channel_data:
             self.allowed_links = y.get('allowed_links', [])
             self.spam_match = y.get('spam_match', 0.8)
 
+    class _duplicate_options:
+        def __init__(self, z: dict):
+            self.is_enabled = z.get('is_enabled', False)
+            self.cache_amount = z.get('cache_amount', 10) # determines how many posts are stored in db
+            self.cached_posts = z.get('cached_posts', [])
+        
+        def update_cache(self, content) -> None:
+            """Add new post to cache and remove the oldest (defined by order)."""
+            self.cached_posts = [content] + self.cached_posts[:-1]
+
     def __init__(self, x: dict):
         self.is_ok = True
         self.name = x.get('name', '')
         self.last_post_id = x.get('last_post_id', 0)
         self.spam_options = self._spam_options(x.get('spam_options', {}))
+        self.duplicate_options = self._duplicate_options(x.get('duplicate_options', {}))
 
         self.is_ok = bool(self.name) and bool(x.get('spam_options', {}))
     
@@ -43,6 +54,11 @@ class channel_data:
                 'has_text': self.spam_options.has_text,
                 'spam_match': self.spam_options.spam_match,
                 'allowed_links': self.spam_options.allowed_links
+            },
+            'duplicate_options': {
+                'is_enabled': self.duplicate_options.is_enabled,
+                'cache_amount': self.duplicate_options.cache_amount,
+                'cached_posts': self.duplicate_options.cached_posts if self.duplicate_options.is_enabled else [] # we don't store posts if duplicate options are not enabled
             }
         }
         return data
@@ -78,8 +94,8 @@ class database:
 def __test():
     """Developer function."""
     k = database()
-    print(k.channels[0].to_json())
-    k.channels[0].spam_options.allowed_links.append('aaa.com')
+    ch_data = k.channels[0]
+    print(ch_data.to_json())
     k.save()
 
 if __name__ == '__main__':

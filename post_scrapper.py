@@ -5,8 +5,8 @@ import logger
 import database_manager
 import requests
 
-channel_db = database_manager.database()
-data = channel_db.channels_data
+db = database_manager.database()
+data = db.channels
 log = logger.logger()
 MAX_TRIES = 15 # how many posts to check to find the last one (needed because of posts deletion)
 
