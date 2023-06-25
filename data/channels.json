@@ -1,0 +1,15 @@
+[
+    {
+        "name": "oldbutgoldbest",
+        "last_post_id": 6550,
+        "spam_options": {
+            "has_link": null,
+            "has_photo": false,
+            "has_video": false,
+            "has_poll": false,
+            "has_text": false,
+            "spam_match": 0.8,
+            "allowed_links": []
+        }
+    }
+]
