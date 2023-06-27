@@ -1,20 +1,23 @@
-import sifter
+"""Launcher for sifter program."""
+
+import main
 import logger
 import time
 
 
-PERIOD = 600 # seconds
+PERIOD = 600 # in seconds
+logger.init()
 
 
 def run() -> None:
-    log = logger.logger()
-    log.write('[RUNNING PROGRAM]')
+    logger.log.write('LAUNCHER - STARTING.')
     while True:
+        logger.log.write('LAUNCHER - RUNNING SIFTER.')
         try:
-            sifter.main()
+            main.main()
         except Exception as e:
-            log.error(e)
-        time.sleep(PERIOD)
+            logger.log.error(e)
+        time.sleep(PERIOD) # don't bully me for this, better give an advice
 
 if __name__ == '__main__':
     run()

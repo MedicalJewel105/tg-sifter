@@ -3,7 +3,12 @@ import arrow
 import traceback
 
 LOG_FOLDER = 'log'
+MS_ENABLED = True # define whether milliseconds enabled or not  
 
+def init():
+    """Initialize log system for use in other modules."""
+    global log
+    log = logger()
 
 class logger:
     """Tool to work with logs. File names: 'DD_MM_YY'."""
@@ -13,6 +18,12 @@ class logger:
 
     def _time(self) -> str:
         """Get current time."""
+        if MS_ENABLED:
+            now = arrow.utcnow()
+            now_time = now.format('HH:mm:ss')
+            millis = round(arrow.utcnow().float_timestamp, 3)
+            millis -= int(millis)
+            return now_time + str(millis)[1:4]
         return arrow.now().format('HH:mm:ss')
     
     def _date(self) -> str:
@@ -57,7 +68,7 @@ class logger:
         self.write(*words, sep=sep, end=end)
 
 def _test():
-    """Test function for this module."""
+    """Developer function."""
     l = logger()
     print(l._time())
     print(l._date())
