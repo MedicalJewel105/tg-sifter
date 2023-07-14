@@ -3,3 +3,4 @@ bad_post.txt
 good_post.txt
 /test
 /log
+/__pycache__
