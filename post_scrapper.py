@@ -1,8 +1,10 @@
 """Module to scrap new posts from TG channel."""
 
 from bs4 import BeautifulSoup as BS
+import html2text
 import logger
 import requests
+import re
 
 
 MAX_TRIES = 15 # how many posts to check to find the last one (needed because of posts deletion)
@@ -10,13 +12,15 @@ MAX_TRIES = 15 # how many posts to check to find the last one (needed because of
 
 def _test():
     """Test function for this module."""
+    logger.init()
     import database_manager
     db = database_manager.database()
     data = db.channels
     x = data[0]
-    posts, last_post_id, base_post = scrap_channel(x.name, x.last_post_id)
+    posts, last_post_id, _ = scrap_channel(x.name, x.last_post_id)
     for post in posts:
-        print(post)
+        # print(post)
+        pass
     print(last_post_id)
 
 def scrap_channel(channel_name: str, last_post_id: int) -> tuple[list, int, BS]:
@@ -30,24 +34,21 @@ def scrap_channel(channel_name: str, last_post_id: int) -> tuple[list, int, BS]:
 
     logger.log.write(f'SCRAPPER - PARSING CHANNEL {channel_name}...')
 
-    base_post_response, got_response = _get_response(f'https://t.me/{channel_name}')
-    if not got_response: # if we don't get this, we won't be able to identify found posts
+    base_post_response, base_post_ok = _get_response(f'https://t.me/{channel_name}')
+    if not base_post_ok: # if we don't get this, we won't be able to identify found posts
         logger.log.warning('SCRAPPER - UNABLE TO GET BASE POST.')
         return [], last_post_id
-    base_post = BS(base_post_response.content, 'html.parser') # dead posts are found by comparing text in them to text in this post (channel description)
 
     while True:
-        url = f'https://t.me/{channel_name}/{current_post_id}'
+        url = f'https://t.me/{channel_name}/{current_post_id}?embed=1&mode=tme'
         r, is_ok = _get_response(url)
         if is_ok:
-            post = BS(r.content, 'html.parser')
-            is_post_found, base_ok = _validate_post(base_post, post)
-            if not base_ok: # if base post in channel is not ok, we won't be able to identify found posts
-                break
+            post_html = BS(r.text, 'html.parser')
+            is_post_found = _validate_post(post_html)
             if is_post_found:
                 last_found_post_id = current_post_id
                 current_try = 0
-                found_posts.append(post)
+                found_posts.append(post_html)
             else:
                 deleted_posts += 1
         
@@ -56,18 +57,19 @@ def scrap_channel(channel_name: str, last_post_id: int) -> tuple[list, int, BS]:
             break
         current_post_id += 1
 
-    current_post_id -= 1 # somehow it works OK
-    deleted_posts -= 1 # because value of this variable is raised by 1 at the end of the loop
-    # some log stuff:
+    # some logging stuff:
     all_posts_amount = current_post_id - MAX_TRIES - last_post_id # posts after last existing post are not counted
     deleted_posts -= MAX_TRIES
+    if deleted_posts == all_posts_amount == 1: # somehow it works now
+        deleted_posts = all_posts_amount = 0
     logger.log.write(f'SCRAPPER - {all_posts_amount} POSTS FOUND: {len(found_posts)} EXIST, {deleted_posts} DELETED.')
-    logger.log.write(f'SCRAPPER - LAST FOUND POST ID: {last_post_id}.')
+    logger.log.write(f'SCRAPPER - LAST FOUND POST ID: {last_found_post_id}.')
+    # note that post with last_post_id was taken into account in previous run
 
-    return found_posts, last_found_post_id, base_post
+    return found_posts, last_found_post_id, base_post_response
 
 def _get_response(url: str) -> tuple[requests.Response | None, bool]:
-    """Handle request errors. Returns Responce object (or None) and OK flag."""
+    """Handle request errors. Returns Response object (or None) and OK flag."""
     try:
         r = requests.get(url)
     except requests.exceptions.Timeout:
@@ -91,28 +93,21 @@ def _get_response(url: str) -> tuple[requests.Response | None, bool]:
         logger.log.warning(error)
     return None, False
 
-def _validate_post(base_post: BS, post: BS) -> tuple[bool, bool]:
+def _validate_post(post_html: BS) -> bool:
     """Make sure that post is 'online' (exists and not deleted).
-    Retuns 2 booleans. 1 - is_post_found, 2 - is_base_tag_found."""
-    # TODO: be able to differentiate between a post and an image: 
-    # https://t.me/oldbutgoldbest/6635?single
-    # https://t.me/oldbutgoldbest/6636?single
-    # https://t.me/oldbutgoldbest/6637?single
-    # this all is one 'post': https://t.me/oldbutgoldbest/6633
-    base_meta_tag = base_post.find('meta', attrs={'property': 'og:description'})
-    # NOTE: if channel base content is empty, it is not accounted
-    if base_meta_tag:
-        base_description_content = base_meta_tag.get('content', '')
-    else:
-        logger.log.warning('SCRAPPER - TAG "og:description" NOT FOUND IN BASE POST.')
-        return False, False
+    Returns True if post is found."""
     
-    post_meta_tag = post.find('meta', attrs={'property': 'og:description'})
-    if post_meta_tag:
-        post_meta_content = post_meta_tag.get('content', '')
-    is_post_found = base_description_content != post_meta_content
-    
-    return is_post_found, True
+    def _html_to_text(html):
+        """Returns text of the post."""
+        h = html2text.HTML2Text()
+        h.decode_errors = 'ignore'  # ignore Unicode decoding errors
+        text = h.handle(html)
+        text = re.sub(r'\*+', '', text)  # remove asterisks
+        text = re.sub(r'^[ \t]*[\\`]', '', text, flags=re.MULTILINE)  # remove leading \ or `
+        return text
+
+    content = _html_to_text(str(post_html.find('div', {'class': 'tgme_widget_message_text js-message_text', 'dir': 'auto'})))
+    return content.strip() != 'None'
 
 if __name__ == '__main__':
     _test()
