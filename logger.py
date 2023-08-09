@@ -1,9 +1,12 @@
 import os
 import arrow
 import traceback
+import winsound
+
 
 LOG_FOLDER = 'log'
-MS_ENABLED = True # define whether milliseconds enabled or not  
+MS_ENABLED = False # define whether milliseconds enabled or not 
+BEEP_ENABLED = True # beep sound for windows
 
 def init():
     """Initialize log system for use in other modules."""
@@ -57,6 +60,7 @@ class logger:
     def error(self, e: Exception) -> None:
         """Write error to log.
         Use when handling not specified errors."""
+        if BEEP_ENABLED: self.beep(True)
         text = 'ERROR!'
         exc_text = ''.join(traceback.format_exception(e))
         self.write(text, exc_text, sep='\n')
@@ -64,11 +68,22 @@ class logger:
     def warning(self, *words, sep = ' ', end = '\n') -> None:
         """Write text to log with a warning.
         Use when handling specified errors."""
+        if BEEP_ENABLED: self.beep(False)
         words = ('WARNING!',) + words
         self.write(*words, sep=sep, end=end)
 
+    def beep(self, is_error: bool) -> None:
+        """Beep Boop!"""
+        if is_error:
+            for _ in range(4):
+                winsound.Beep( 1010, 400 )
+        else:
+            for _ in range(2):
+                winsound.Beep( 1010, 250 )
+
 def _test():
     """Developer function."""
+    import time
     l = logger()
     print(l._time())
     print(l._date())
@@ -78,6 +93,7 @@ def _test():
         1 / 0
     except Exception as e:
         l.error(e)
+    time.sleep(1)
     l.warning('this is a warning')
 
 if __name__ == '__main__':

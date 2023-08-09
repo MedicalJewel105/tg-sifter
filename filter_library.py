@@ -2,13 +2,17 @@
 import post_parser
 
 
-def anecdote(post: post_parser.tg_post, spam_match) -> tuple[post_parser.tg_post, bool]:
+def template(post: list | post_parser.tg_post, spam_match: float, allowed_links: list) -> tuple[list | post_parser.tg_post, bool]:
     """Returns modified (or not) post and flag if it is ad or not."""
-    spam_match_value = 0
-
-    spam_match_value += 0.8
+    is_grouped = isinstance(post, list)
 
 
-FILTER_LIST = {
+def anecdote(post: list | post_parser.tg_post, spam_match: float, allowed_links: list) -> tuple[list | post_parser.tg_post, bool]:
+    """Spam match variable is not used in this filter."""
+    is_grouped = isinstance(post, list)
+    is_ad = True if is_grouped else post.has_image or post.has_links
+    return post, is_ad
+
+FILTER_DICT = {
     'anecdote': anecdote
 }

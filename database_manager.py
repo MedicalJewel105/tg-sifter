@@ -10,7 +10,7 @@ log = logger.logger()
 DATA_FOLDER = 'data'
 CHANNELS_FILE = 'channels.json'
 CLONE_CHANNELS_FILE = 'clone_channels.json'
-JSON_INDENT = None # int | None
+JSON_INDENT = 4 # int | None
 CHANNELS_PATH = path.join(DATA_FOLDER, CHANNELS_FILE)
 CLONE_CHANNELS_PATH = path.join(DATA_FOLDER, CLONE_CHANNELS_FILE)
 
@@ -37,12 +37,11 @@ class channel_data:
 
 class clone_channel_data:
     """Class with data for clone channels, where parsed posts after sifting are forwarded."""
-    def __init__(self, x: dict):
-        self.name = x.get('name', '')
+    def __init__(self, name: str, x: dict):
+        self.name = name
         self.filter = x.get('filter', None)
         self.spam_match = x.get('spam_match', 0.8)
         self.cache_options = self.cache_options(x.get('cache_options', {}))
-        self.is_ok = bool(self.name)
 
     class cache_options:
         """Class to store clone channel's cache options."""
@@ -60,13 +59,14 @@ class clone_channel_data:
     def to_json(self) -> dict:
         """Transform object into .json format."""
         data = {
-            'name': self.name,
-            'filter': self.filter,
-            'spam_match': self.spam_match,
-            'cache_options': {
-                'cache_enabled': self.cache_options.cache_enabled,
-                'cache_amount': self.cache_options.cache_amount,
-                'cached_posts': self.cache_options.cached_posts if self.cache_options.cache_enabled else [] # we don't store posts if duplicate options are not enabled
+            self.name: {
+                'filter': self.filter,
+                'spam_match': self.spam_match,
+                'cache_options': {
+                    'cache_enabled': self.cache_options.cache_enabled,
+                    'cache_amount': self.cache_options.cache_amount,
+                    'cached_posts': self.cache_options.cached_posts if self.cache_options.cache_enabled else [] # we don't store posts if duplicate options are not enabled
+                }
             }
         }
         return data
@@ -74,7 +74,7 @@ class clone_channel_data:
 class database:
     def __init__(self):
         self.channels = []
-        self.clone_channels = []
+        self.clone_channels = {}
         self.__load()
 
     def __load(self) -> None:
@@ -96,7 +96,7 @@ class database:
         with open(CLONE_CHANNELS_PATH, 'r') as f:
             data = json.load(f)
         for x in data:
-            self.clone_channels.append(clone_channel_data(x))
+            self.clone_channels[x] = clone_channel_data(x, data[x])
         log.write('DB - LOADED.')
 
     def save(self) -> None:
@@ -112,18 +112,21 @@ class database:
         log.write('DB - SAVED.')
 
         log.write('DB - SAVING CLONE CHANNELS DATA...')
-        json_data = [i.to_json() for i in self.clone_channels]
+        json_data_dict = {}
+        for i in self.clone_channels.values():
+            json_data_dict.update(i.to_json())
         with open(CLONE_CHANNELS_PATH, 'w') as f:
-            json.dump(json_data, f, indent=JSON_INDENT)
+            json.dump(json_data_dict, f, indent=JSON_INDENT)
         log.write('DB - SAVED.')
-
+    
 def __test():
     """Developer function."""
     k = database()
     ch_data = k.channels[0]
     print(ch_data.to_json())
-    c_ch_data = k.clone_channels[0]
-    print(c_ch_data.to_json())
+    print(k.clone_channels)
+    for i in k.clone_channels.values():
+        print(i.to_json())
     k.save()
 
 if __name__ == '__main__':
