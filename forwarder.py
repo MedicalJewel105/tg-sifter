@@ -1,3 +1,4 @@
+"""Module with Python bot, which forwards messages to clone channels."""
 import post_parser
 import logger
 

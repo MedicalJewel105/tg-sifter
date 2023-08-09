@@ -1,4 +1,4 @@
-"""Launcher for sifter program."""
+"""Launcher for all program."""
 
 import main
 import logger

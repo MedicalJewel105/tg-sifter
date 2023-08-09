@@ -1,5 +1,7 @@
+"""In this module posts are sifted."""
 import logger
 import database_manager
+import filter_library
 
 
 def sift(posts: list, channel_data: database_manager.channel_data) -> list:

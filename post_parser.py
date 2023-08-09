@@ -142,7 +142,7 @@ class tg_post:
         return sorted(post_ids)
 
     def check_is_head_post(self) -> bool:
-        """Check if post is first in group of posts."""
+        """Returns True if post is first in group of posts."""
         return self.id == self.grouped_with[0]
 
     def to_json(self) -> dict:
@@ -164,16 +164,10 @@ class tg_post:
         }
         return json
 
-def classify(posts: list[BS], base_post: BS) -> list:
+def classify(posts: list[BS]) -> list:
     """Turn BS objects into tg_post objects."""
     logger.log.write('PARSER - CLASSIFYING POSTS...')
-    classified_base_post = tg_post(base_post)
-    classified_posts = []
-    for post in posts:
-        classified_post = tg_post(post)
-        # some variables setting:
-        
-        classified_posts.append(classified_post)
+    classified_posts = [tg_post(post) for post in posts]
     logger.log.write('PARSER - POSTS CLASSIFIED.')
     return classified_posts
 
