@@ -1,10 +1,5 @@
+/__pycache__
 /test
 /log
-/__pycache__
 /data
-*.json
-*.pyc
-/data/bot_data.txt
-/data/channels.json
-/data/clone_channels.json
 filter_library.py
