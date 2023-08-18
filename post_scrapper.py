@@ -23,7 +23,7 @@ def _test():
         pass
     print(last_post_id)
 
-def scrap_channel(channel_name: str, last_post_id: int) -> tuple[list, int, BS]:
+def scrap_channel(channel_name: str, last_post_id: int) -> tuple[list, int]:
     """Look for latest posts in a specified channel.
     Returns found posts, last found post ID and BS object of base post.."""
     found_posts = []
@@ -32,10 +32,10 @@ def scrap_channel(channel_name: str, last_post_id: int) -> tuple[list, int, BS]:
     current_post_id = last_found_post_id + 1
     deleted_posts = 0
 
-    logger.log.write(f'SCRAPPER - PARSING CHANNEL {channel_name}...')
+    logger.log.write('SCRAPPER - PARSING CHANNEL...')
 
     base_post_response, base_post_ok = _get_response(f'https://t.me/{channel_name}')
-    if not base_post_ok: # if we don't get this, we won't be able to identify found posts
+    if not base_post_ok: # connection error
         logger.log.warning('SCRAPPER - UNABLE TO GET BASE POST.')
         return [], last_post_id
 
@@ -66,7 +66,11 @@ def scrap_channel(channel_name: str, last_post_id: int) -> tuple[list, int, BS]:
     logger.log.write(f'SCRAPPER - LAST FOUND POST ID: {last_found_post_id}.')
     # note that post with last_post_id was taken into account in previous run
 
-    return found_posts, last_found_post_id, base_post_response
+    return found_posts, last_found_post_id
+
+def scrap_private_channel(last_post_id: int) -> tuple[list, int]:
+    # TODO: finish this
+    pass
 
 def _get_response(url: str) -> tuple[requests.Response | None, bool]:
     """Handle request errors. Returns Response object (or None) and OK flag."""

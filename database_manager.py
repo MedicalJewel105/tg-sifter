@@ -4,6 +4,7 @@ from os import path, mkdir
 import logger
 import json
 import post_parser
+import difflib
 
 
 log = logger.logger()
@@ -18,15 +19,15 @@ CLONE_CHANNELS_PATH = path.join(DATA_FOLDER, CLONE_CHANNELS_FILE)
 class channel_data:
     """Class with data for channels, where posts are parsed from."""
     def __init__(self, x: dict):
-        self.name = x.get('name', '')
-        self.last_post_id = x.get('last_post_id', 0)
-        self.clone_name = x.get('clone_name', '')
-        self.allowed_links = x.get('allowed_links', [])
+        self.name: str = x.get('name', '')
+        self.last_post_id: int = x.get('last_post_id', 0)
+        self.clone_name: str = x.get('clone_name', '')
+        self.allowed_links: list[str] = x.get('allowed_links', [])
 
-        self.is_ok = bool(self.name) and bool(x.get('clone_name', ''))
+        self.is_ok: bool = bool(self.name) and bool(x.get('clone_name', ''))
     
-    def to_json(self) -> dict:
-        """Transform object into .json format."""
+    def to_dict(self) -> dict:
+        """Get a dict object ready for JSON conversion."""
         data = {
             'name': self.name,
             'last_post_id': self.last_post_id,
@@ -38,32 +39,49 @@ class channel_data:
 class clone_channel_data:
     """Class with data for clone channels, where parsed posts after sifting are forwarded."""
     def __init__(self, name: str, x: dict):
-        self.name = name
-        self.filter = x.get('filter', None)
-        self.spam_match = x.get('spam_match', 0.8)
+        self.name: str = name
+        self.filter: str = x.get('filter', None)
         self.cache_options = self.cache_options(x.get('cache_options', {}))
 
     class cache_options:
         """Class to store clone channel's cache options."""
         def __init__(self, y: dict):
-            self.cache_enabled = y.get('cache_enabled', False)
-            self.cache_amount = y.get('cache_amount', 10) # determines how many posts are stored in db
-            self.cached_posts = y.get('cached_posts', [])
+            self.cache_enabled: bool = y.get('cache_enabled', False)
+            self.match_rate: float = y.get('match_rate', 0.8) # for check in cache function
+            self.cache_amount: int = y.get('cache_amount', 10) # determines how many posts are stored in db
+            self.cached_posts: list[dict] = y.get('cached_posts', [])
         
         def update_cache(self, content: dict | post_parser.tg_post) -> None:
             """Add new post (as json or tg_post) to cache and remove the oldest (defined by order)."""
             if isinstance(content, post_parser.tg_post):
-                content = content.to_json()
-            self.cached_posts = [content] + self.cached_posts[:-1]
+                content = content.to_dict(True)
+            if len(self.cached_posts) < self.cache_amount:
+                self.cached_posts.append(content)
+            else:
+                self.cached_posts = [content] + self.cached_posts[:-1]
+            
+        def check_is_in_cache(self, post: post_parser.tg_post, match_rate: float = None) -> bool:
+            """Check if post is already in cache.
+            Can be used to avoid duplicates in clone channels.
+            Match rate is usually set in filter library.
+            Searches only in text."""
+            if not self.cache_enabled:
+                logger.log.warning('DB - CACHE IS NOT ENABLED BUT POST IS SEARCHED FOR IN IT.')
+                return False
+            if match_rate == None:
+                match_rate = self.match_rate
+            post_text = post.text.replace('\n', '')
+            post_texts = [i.get('text', '').replace('\n', '') for i in self.cached_posts]
+            return bool(difflib.get_close_matches(post_text, post_texts, cutoff=match_rate))
     
-    def to_json(self) -> dict:
-        """Transform object into .json format."""
+    def to_dict(self) -> dict:
+        """Get a dict object ready for JSON conversion."""
         data = {
             self.name: {
                 'filter': self.filter,
-                'spam_match': self.spam_match,
                 'cache_options': {
                     'cache_enabled': self.cache_options.cache_enabled,
+                    'match_rate': self.cache_options.match_rate,
                     'cache_amount': self.cache_options.cache_amount,
                     'cached_posts': self.cache_options.cached_posts if self.cache_options.cache_enabled else [] # we don't store posts if duplicate options are not enabled
                 }
@@ -87,16 +105,16 @@ class database:
             data = json.load(f)
         for x in data:
             self.channels.append(channel_data(x))
-        log.write('DB - LOADED.')
 
         log.write('DB - LOADING CLONE CHANNELS DATA...')
         if not path.exists(CLONE_CHANNELS_PATH):
             log.write(f'ERROR! {CLONE_CHANNELS_PATH} FILE NOT FOUND.')
             exit()
-        with open(CLONE_CHANNELS_PATH, 'r') as f:
+        with open(CLONE_CHANNELS_PATH, 'r', encoding='UTF-8') as f:
             data = json.load(f)
         for x in data:
             self.clone_channels[x] = clone_channel_data(x, data[x])
+        
         log.write('DB - LOADED.')
 
     def save(self) -> None:
@@ -106,28 +124,27 @@ class database:
             log.write(f'WARNING! {DATA_FOLDER} FOLDER DOES NOT EXIST.')
             mkdir(DATA_FOLDER)
         
-        json_data = [i.to_json() for i in self.channels]
+        json_data = [i.to_dict() for i in self.channels]
         with open(CHANNELS_PATH, 'w') as f:
             json.dump(json_data, f, indent=JSON_INDENT)
-        log.write('DB - SAVED.')
 
         log.write('DB - SAVING CLONE CHANNELS DATA...')
         json_data_dict = {}
         for i in self.clone_channels.values():
-            json_data_dict.update(i.to_json())
-        with open(CLONE_CHANNELS_PATH, 'w') as f:
-            json.dump(json_data_dict, f, indent=JSON_INDENT)
+            json_data_dict.update(i.to_dict())
+        with open(CLONE_CHANNELS_PATH, 'w', encoding='UTF-8') as f:
+            json.dump(json_data_dict, f, indent=JSON_INDENT, ensure_ascii=False)
+        
         log.write('DB - SAVED.')
     
 def __test():
     """Developer function."""
-    k = database()
-    ch_data = k.channels[0]
-    print(ch_data.to_json())
-    print(k.clone_channels)
-    for i in k.clone_channels.values():
-        print(i.to_json())
-    k.save()
+    from post_parser import tg_post
+    from bs4 import BeautifulSoup as BS
+    with open('test/video.html', 'r') as f:
+        post = tg_post(BS(f.read(), features="html.parser"))
+    k = database().clone_channels.get('anekdotsdots')
+    print(k.cache_options.check_is_in_cache(post))
 
 if __name__ == '__main__':
     __test()

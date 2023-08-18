@@ -1,0 +1,3 @@
+better bot posting
+investigate possibilities of scrapping private channels
+parse stickers

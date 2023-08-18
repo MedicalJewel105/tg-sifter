@@ -1,12 +1,14 @@
 import os
 import arrow
 import traceback
-import winsound
 
 
 LOG_FOLDER = 'log'
 MS_ENABLED = False # define whether milliseconds enabled or not 
 BEEP_ENABLED = True # beep sound for windows
+
+if BEEP_ENABLED:
+    import winsound
 
 def init():
     """Initialize log system for use in other modules."""

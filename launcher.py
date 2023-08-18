@@ -3,11 +3,12 @@
 import main
 import logger
 import schedule
+import os
 
 
-PERIOD = 20 # pause interval
+os.chdir(os.path.dirname(os.path.realpath(__file__))) # change working direction to folder with this project
+PERIOD = 20 # pause interval (in minutes)
 logger.init()
-
 
 def launch() -> None:
     logger.log.write('LAUNCHER - STARTING.')

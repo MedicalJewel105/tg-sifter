@@ -3,3 +3,6 @@ arrow==1.2.3
 beautifulsoup4==4.12.2
 html2text==2020.1.16
 schedule==1.2.0
+python-telegram-bot==20.4
+httpx==0.24.1
+emot==3.1
