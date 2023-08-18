@@ -281,3 +281,4 @@ BOT_DATA_FOLDER # name of the folder where file with bot's api token is stored
 ```
 
 For now bot can't send all types of messages user can.
+Make sure bot is an admin of a clone channel.
