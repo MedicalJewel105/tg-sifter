@@ -221,7 +221,12 @@ class tg_post:
 
 def classify(posts: list[BS]) -> list:
     """Turn BS objects into tg_post objects."""
-    logger.log.write('PARSER - CLASSIFYING POSTS...')
+    if posts:
+        logger.log.write('PARSER - CLASSIFYING POSTS...')
+    else:
+        logger.log.write('PARSER - NO POSTS TO PARSE.')
+        return []
+    
     classified_posts = [tg_post(post) for post in posts]
     logger.log.write('PARSER - POSTS CLASSIFIED.')
     return classified_posts

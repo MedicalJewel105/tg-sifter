@@ -5,6 +5,7 @@ import database_manager
 import time
 import post_parser
 from telegram import InputMediaPhoto, InputMediaVideo, Bot
+import requests
 
 
 POST_DELAY_TIME = 5 # delay between new posts, in seconds. small delay will cause errors
@@ -15,9 +16,16 @@ BOT_DATA_PATH = os.path.join(BOT_DATA_FOLDER, BOT_DATA_FILE)
 
 async def resend(posts: list[post_parser.tg_post], clone_channel_data: database_manager.clone_channel_data) -> None:
     """Resend posts to clone channel. If it can't be done for some reason, posts go to cache to be posted later."""
-    clone_name = '@'+clone_channel_data.name
+    if clone_channel_data.is_private:
+        clone_name = clone_channel_data.private_id
+    else:
+        clone_name = '@'+clone_channel_data.name
     sent_amount = 0
-    logger.log.write(f'FORWARDER - SENDING MESSAGES TO {clone_name}...')
+    if posts:
+        logger.log.write(f'FORWARDER - SENDING POSTS TO {clone_channel_data.name}...')
+    else:
+        logger.log.write('FORWARDER - NO POSTS TO SEND.')
+        return
     
     for post in posts:
         if clone_channel_data.cache_options.cache_enabled:
@@ -59,9 +67,10 @@ async def resend(posts: list[post_parser.tg_post], clone_channel_data: database_
         else:
             sent_amount += 1
 
-        time.sleep(POST_DELAY_TIME)
+        if posts.index(post) != len(posts) - 1: # do not sleep if it is last message to send
+            time.sleep(POST_DELAY_TIME)
 
-    logger.log.write(f'FORWARDER - {sent_amount} OF {len(posts)} MESSAGES SENT.')
+    logger.log.write(f'FORWARDER - {sent_amount} OF {len(posts)} POSTS SENT.')
 
 def init() -> bool:
     """Initialize bot. Returns True, if OK."""
@@ -81,7 +90,7 @@ def init() -> bool:
 
 
 def debug():
-    """Developer's function."""
+    """Debug function."""
 
 
 if __name__ == '__main__':

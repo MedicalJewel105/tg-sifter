@@ -6,7 +6,11 @@ import filter_library
 
 def sift(posts: list, channel_data: database_manager.channel_data, clone_channel_data: database_manager.clone_channel_data) -> list:
     """Throw away spam configured by channel options."""
-    logger.log.write('SIFTER - SIFTING POSTS...')
+    if posts:
+        logger.log.write('SIFTER - SIFTING POSTS...')
+    else:
+        logger.log.write('SIFTER - NO POSTS TO SIFT.')
+        return []
     sifted_posts = []
     ad_filter = filter_library.FILTER_DICT.get(clone_channel_data.filter, None)
 

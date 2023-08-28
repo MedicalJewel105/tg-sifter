@@ -20,12 +20,16 @@ def main():
         if not channel_data.is_ok:
             logger.log.warning('MAIN - CHANNEL DATA HAS AN ERROR.')
             continue
-        logger.log.write(f'MAIN - PROCESSING CHANNEL @{channel_data.name}...')
         if channel_data.clone_name not in clone_channels_data:
             logger.log.warning(f'MAIN - CLONE CHANNEL NAME "{channel_data.clone_name}" NOT FOUND.')
             continue
-
         clone_channel_data = clone_channels_data[channel_data.clone_name]
+        if not clone_channel_data.is_ok:
+            logger.log.warning('MAIN - CLONE CHANNEL DATA IS NOT OK.')
+            continue
+        
+        logger.log.write(f'MAIN - PROCESSING CHANNEL @{channel_data.name}...')
+        
         new_posts, last_post_id = post_scrapper.scrap_channel(channel_data.name, channel_data.last_post_id)
         channel_data.last_post_id = last_post_id
         posts = post_parser.classify(new_posts)

@@ -40,8 +40,11 @@ class clone_channel_data:
     """Class with data for clone channels, where parsed posts after sifting are forwarded."""
     def __init__(self, name: str, x: dict):
         self.name: str = name
+        self.is_private: bool = x.get('is_private', False)
+        self.private_id: str = x.get('private_id', '')
         self.filter: str = x.get('filter', None)
         self.cache_options = self.cache_options(x.get('cache_options', {}))
+        self.is_ok = bool(self.private_id) if self.is_private else True # if private_id is defined but channel is private
 
     class cache_options:
         """Class to store clone channel's cache options."""
@@ -78,6 +81,7 @@ class clone_channel_data:
         """Get a dict object ready for JSON conversion."""
         data = {
             self.name: {
+                'is_private': self.is_private,
                 'filter': self.filter,
                 'cache_options': {
                     'cache_enabled': self.cache_options.cache_enabled,
@@ -87,6 +91,8 @@ class clone_channel_data:
                 }
             }
         }
+        if self.is_private:
+            data[self.name]['private_id'] = self.private_id
         return data
 
 class database:

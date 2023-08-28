@@ -68,7 +68,7 @@ And one method: `self.save()`
 ]
 ```
 
-You can find out id of a post in Telegram via copying link to message.
+You can find out ID of a post in Telegram via copying link to message.
 Allowed links are used in `filter_library`. There you can differentiate what is ad and what is not.
 
 ### As Python object
@@ -92,6 +92,8 @@ And also a `to_dict()` method.
 ```json
 {
     "clone name without @": {
+        "is_private": bool,
+        "private_id": str, // only is is_private
         "filter": str,
         "cache_options": {
             "cache_enabled": bool,
@@ -109,7 +111,12 @@ And also a `to_dict()` method.
 }
 ```
 
-clone name - short link of a channel, where posts are resent to.
+clone_name - short link of a channel, where posts are resent to.
+You can easily find it out by copying link to message from that channel.
+
+ - `is_private` - defines if channel is non-pulic.
+
+   - `private_id` - numerical string. You can find out how to get it [here](https://kerkour.com/telegram-bot-send-messages-to-private-channel#:~:text=Getting%20the%20chat_id%20of%20a%20private%20Telegram%20channel). You can open that link in browser, 'botXXX:YYY' is 'bot<bot_token>'.
 
  - `filter` - filter from `filter_library`, for example `template`.
 
