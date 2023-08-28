@@ -96,7 +96,7 @@ And also a `to_dict()` method.
         "cache_options": {
             "cache_enabled": bool,
             "match_rate": float,
-            "cache_amount": int,
+            "cache_size": int,
             "cached_posts": [
                 {
                     "id": int,
@@ -117,7 +117,7 @@ clone name - short link of a channel, where posts are resent to.
 
    - `match_rate` - float between (0, 1]. Used in `difflib.get_close_matches`.
 
-   - `cache_amount` - positive int. Means maximum length of cache (amount of cached posts).
+   - `cache_size` - positive int. Means maximum length of cache (amount of cached posts).
 
    - `cached_posts` - list with dict type (when loaded) objects.
 
@@ -137,7 +137,7 @@ self.filter: str # filter from filter_library
 
 self.cache_options.cache_enabled: bool
 self.cache_options.match_rate: float
-self.cache_options.cache_amount: int
+self.cache_options.cache_size: int
 self.cache_options.cached_posts: list[dict]
 ```
 

@@ -48,14 +48,14 @@ class clone_channel_data:
         def __init__(self, y: dict):
             self.cache_enabled: bool = y.get('cache_enabled', False)
             self.match_rate: float = y.get('match_rate', 0.8) # for check in cache function
-            self.cache_amount: int = y.get('cache_amount', 10) # determines how many posts are stored in db
+            self.cache_size: int = y.get('cache_size', 10) # determines how many posts are stored in db
             self.cached_posts: list[dict] = y.get('cached_posts', [])
         
         def update_cache(self, content: dict | post_parser.tg_post) -> None:
             """Add new post (as json or tg_post) to cache and remove the oldest (defined by order)."""
             if isinstance(content, post_parser.tg_post):
                 content = content.to_dict(True)
-            if len(self.cached_posts) < self.cache_amount:
+            if len(self.cached_posts) < self.cache_size:
                 self.cached_posts.append(content)
             else:
                 self.cached_posts = [content] + self.cached_posts[:-1]
@@ -82,7 +82,7 @@ class clone_channel_data:
                 'cache_options': {
                     'cache_enabled': self.cache_options.cache_enabled,
                     'match_rate': self.cache_options.match_rate,
-                    'cache_amount': self.cache_options.cache_amount,
+                    'cache_size': self.cache_options.cache_size,
                     'cached_posts': self.cache_options.cached_posts if self.cache_options.cache_enabled else [] # we don't store posts if duplicate options are not enabled
                 }
             }
